@@ -3,6 +3,7 @@ import time
 import shutil
 import copy
 import glob
+import sys
 
 from  itertools import product, groupby
 
@@ -18,7 +19,7 @@ from parameters import *
 
 # Helper classes to hold settings: maybe only need one class?
 class IFraceSettings(object):
-    def __init__(self, is_iterative=False, interval=10, regenerator='regen_minmax_sobol(100)'):
+    def __init__(self, is_iterative=False, interval=10, regenerator=regen_minmax_sobol(64)):
         self.is_iterative = is_iterative
         self.interval = interval
         self.regenerator = regenerator
@@ -33,24 +34,23 @@ class FRaceSettings(object):
         self.generator = generator
 
 
-class SimulationSettings(object):
-    def __init__(self, algorithm, problems, measure, samples):
+class GeneralSettings(object):
+    def __init__(self, algorithm, problems, measure, samples, user, job, base_location, jar_path):
         self.algorithm = algorithm
         self.problems = problems
         self.measurement = measure
         self.samples = samples
 
-
-class UserSettings(object):
-    def __init__(self, user, job):
         self.user = user
         self.job = job
 
+        self.jar_path = jar_path
+        if not os.path.exists(jar_path):
+            print "Could not find JAR file"
+            sys.exit(1)
 
-class LocationSettings(object):
-    def __init__(self, base_location, results_location):
         self.base_location = base_location
-        self.results_location = results_location
+        self.results_location = os.path.join(base_location, user + '_' + job)
 
 
 # Statistical functions
@@ -86,7 +86,7 @@ def post_hoc(results, alpha, stat):
     return [rank_sum.index(i) for i in rank_sum if abs(best - i) < rhs]
 
 
-def generate_results(user_settings, location_settings):
+def generate_results(settings):
     '''
     Function to generate a results table and a list of parameters given from a directory
     It is assumed that there are an equal number results for each parameter
@@ -100,7 +100,7 @@ def generate_results(user_settings, location_settings):
 
     results = []
     pars = []
-    path = location_settings.results_location
+    path = settings.results_location
     files = sorted(os.listdir(path), key=by_iter)
 
     groups = groupby(files, by_iter)
@@ -115,18 +115,17 @@ def generate_results(user_settings, location_settings):
     return results, pars
 
 
-def iteration(pars, user_settings, simulation_settings, frace_settings, iteration, location_settings, jar_path, jar_type):
-    run_script(generate_script(pars, iteration, simulation_settings, user_settings, location_settings), jar_path, jar_type)
+def iteration(pars, settings, frace_settings, iteration):
+    run_script(generate_script(pars, iteration, settings), settings.jar_path)
 
-    while not all(os.path.exists(p) for p in parameter_filenames(user_settings, iteration, pars, location_settings)):
-	for p in parameter_filenames(user_settings, iteration, pars, location_settings):
-            print p
-            print os.path.exists(p)
+    while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
+	for p in par_filenames(iteration, pars, settings):
+            print p, os.path.exists(p)
         # wait for results
         print "sleepy time"
         time.sleep(5)
 
-    results, pars = generate_results(user_settings, location_settings)
+    results, pars = generate_results(settings)
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'
@@ -155,28 +154,22 @@ def iteration(pars, user_settings, simulation_settings, frace_settings, iteratio
     return pars
 
 
-def runner(request, frace_settings):
-    location_settings = request.session['location_settings']
-    user_settings = request.session['user_settings']
-    ifrace_settings = request.session['ifrace_settings']
-    simulation_settings = request.session['simulation']
-    jar_path = request.session['jar_path']
-    jar_type = request.session['jar_type']
+def frace_runner(settings, frace_settings, ifrace_settings):
 
-    path = os.path.join(location_settings.base_location, user_settings.user)
+    path = os.path.join(settings.base_location, settings.user)
     if os.path.exists(path):
         shutil.rmtree(path)
     os.makedirs(path)
 
-    if os.path.exists(location_settings.results_location):
-        shutil.rmtree(location_settings.results_location)
-    os.makedirs(location_settings.results_location)
+    if os.path.exists(settings.results_location):
+        shutil.rmtree(settings.results_location)
+    os.makedirs(settings.results_location)
 
     print '** Generating parameters'
     pars = [p for p in frace_settings.generator()]
 
     print '** Preparing output file'
-    result_filename = os.path.join(location_settings.base_location, user_settings.user, user_settings.user + '_' + user_settings.job + '.txt')
+    result_filename = os.path.join(settings.base_location, settings.user, settings.user + '_' + settings.job + '.txt')
 
     results_file = open(result_filename, 'w+')
     results_file.write('0 ' + ' '.join([par_to_result(p) for p in pars]) + '\n')
@@ -189,39 +182,45 @@ def runner(request, frace_settings):
         # regenerate parameters if needed
         if ifrace_settings.is_iterative and i % ifrace_settings.interval == 0 and not i == 0:
             print 'Regenerating parameters...'
-            pars = eval(ifrace_settings.regenerator)(pars)
+            pars = ifrace_settings.regenerator(pars)
             # delete all result files for this frace run since they're not used anymore
-            shutil.rmtree(os.path.join(location_settings.results_location))
-            os.makedirs(os.path.join(location_settings.results_location))
+            shutil.rmtree(os.path.join(settings.results_location))
+            os.makedirs(os.path.join(settings.results_location))
 
         # get list of current result files
         toRemove = copy.deepcopy(pars)
 
         # frace iteration
         print '-- Iteration'
-        pars = iteration(pars, user_settings, simulation_settings, frace_settings, i, location_settings, jar_path, jar_type)
+        pars = iteration(pars, settings, frace_settings, i)
 
         # delete unused results
         print '-- Deleting removed parameters'
         toRemove = [ p for p in toRemove if not p in pars ]
         for p in toRemove:
-            for j in glob.glob(os.path.join(location_settings.results_location, '*' + p + '*')):
+            for j in glob.glob(os.path.join(settings.results_location, '*' + p + '*')):
                 os.remove(j)
         print '       Removed', len(toRemove), 'parameters'
 
         # sort parameters
         print '-- Sorting parameters'
-        pars = sort_pars(*generate_results(user_settings, location_settings))
+        pars = sort_pars(*generate_results(settings))
+
+        i += 1
 
         # write pars to result file
         results_file.write(str(i) + ' ' + ' '.join([par_to_result(p) for p in pars]) + '\n')
 
-        i += 1
-
         # this is so we don't waste time tuning when there is no chance of reducing the no. of parameters
         if ifrace_settings.is_iterative and len(pars) == frace_settings.min_solutions:
+            old_i = i
             print '-- Recalculating iteration'
             i = (i / ifrace_settings.interval + 1) * ifrace_settings.interval
+
+            for j in range(i - old_i):
+                p = settings.problems.pop(0)
+                settings.problems.append(p)
+
             print i
 
         print '-- Remaining parameter count: ', len(pars)
@@ -230,7 +229,7 @@ def runner(request, frace_settings):
     results_file.close()
 
     # clear results folder, TODO: not sure if this is needed for ciclops
-    shutil.rmtree(os.path.join(location_settings.results_location))
+    shutil.rmtree(os.path.join(settings.results_location))
 
     print '** Done'
     return result_filename

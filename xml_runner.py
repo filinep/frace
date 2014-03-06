@@ -1,7 +1,8 @@
 import os
 import re
-import subprocess
+import sys
 
+from subprocess import *
 from utils import *
 
 header_section = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -22,24 +23,24 @@ simulation = '''
 </simulation>
 '''
 
-def generate_script(pars, iteration, simulation_settings, user_settings, location_settings):
+def generate_script(pars, iteration, settings):
     '''
     Function to generate a script file given certain elements
     NOTE: Change this as needed
     '''
 
-    script_filename = os.path.join(location_settings.base_location, user_settings.user, user_settings.user + '_' + user_settings.job + '.xml')
+    script_filename = os.path.join(settings.base_location, settings.user, settings.user + '_' + settings.job + '.xml')
     script = open(script_filename, 'w')
 
-    problem = simulation_settings.problems.pop(0)
-    simulation_settings.problems.append(problem)
+    problem = settings.problems.pop(0)
+    settings.problems.append(problem)
 
     algorithms = ''
     sims = ''
 
     # TODO: it kinda sucks doing it this way, jython? :)
     for p in pars:
-        algorithm = simulation_settings.algorithm
+        algorithm = settings.algorithm
 
         config = par_to_num(p)
         for i in range(len(config)):
@@ -48,15 +49,15 @@ def generate_script(pars, iteration, simulation_settings, user_settings, locatio
                 'controlparameter.ConstantControlParameter" parameter="%f"' % config[i]
             )
 
-        algorithms += algorithm.replace(id_name(simulation_settings.algorithm), 'alg_' + p, 1) + '\n'
+        algorithms += algorithm.replace(id_name(settings.algorithm), 'alg_' + p, 1) + '\n'
 
         sims += simulation.replace('$1', 'alg_' + p).replace('$2', id_name(problem)) \
-            .replace('$3', parameter_filename(user_settings.user, user_settings.job, iteration, p, location_settings.results_location)) \
-            .replace('$4', str(simulation_settings.samples))
+            .replace('$3', par_filename(iteration, p, settings)) \
+            .replace('$4', str(settings.samples))
 
     script.write(header_section + '\n')
     script.write('<measurements id="m_frace" class="simulator.MeasurementSuite" resolution="5000">\n' + \
-                 simulation_settings.measurement + '</measurements>\n')
+                 settings.measurement + '</measurements>\n')
     script.write('<problems>' + problem + '</problems>\n')
     script.write('<algorithms>' + algorithms + '</algorithms>\n')
     script.write('<simulations>' + sims + '</simulations>')
@@ -66,9 +67,15 @@ def generate_script(pars, iteration, simulation_settings, user_settings, locatio
     return script_filename
 
 
-def run_script(script, jar_path, jar_type):
+def run_script(script, jar_path):
     '''
     Function to run a given script
     '''
 
-    subprocess.call(['java', '-jar', jar_path, script])
+    print "~~~ Starting process ~~~"
+    process = Popen(['java', '-jar', jar_path, script])
+    process.wait()
+    if process.returncode:
+        print "Error running process: Exiting"
+        sys.exit(1)
+    print "~~~ Process complete ~~~"

@@ -1,11 +1,7 @@
 from frace import *
 from parameters import *
 
-class Request():
-    def __init__(self):
-        self.session = {}
-
-# The order here coresponds to the tuning parameters below
+# The order here corresponds to the tuning parameters below
 parameter_bounds = [
 (0.01,0.99),
 (0.0,4.0),
@@ -49,19 +45,32 @@ problems = [
 
 measurement = '<addMeasurement class="measurement.single.Fitness"/>'
 
-ifrace_settings = IFraceSettings(is_iterative=True, interval=10, regenerator='regen_minmax_sobol(10)')
-frace_settings = FRaceSettings(generator=initial_sobol(parameter_bounds, 10), min_probs=5, min_solutions=2, alpha=0.05, iterations=100)
-user_settings = UserSettings('user_name', 'job_name')
-location_settings = LocationSettings('/home/filipe/test', '/home/filipe/test/' + user_settings.user + '_' + user_settings.job)
-simulation = SimulationSettings(algorithm, problems, measurement, samples=30)
+samples = 5
 
-request = Request()
-request.session['location_settings'] = location_settings
-request.session['user_settings'] = user_settings
-request.session['ifrace_settings'] = ifrace_settings
-request.session['simulation'] = simulation
-request.session['jar_path'] = '/home/filipe/src/cilib/simulator/target/cilib-simulator-assembly-0.8-SNAPSHOT.jar'
-request.session['jar_type'] = 'meh'
+ifrace_settings = IFraceSettings(
+    is_iterative=True, 
+    interval=10, 
+    regenerator=regen_minmax_sobol(64)
+)
 
-runner(request, frace_settings)
+frace_settings = FRaceSettings(
+    generator=initial_sobol(parameter_bounds, 64), 
+    min_probs=5, 
+    min_solutions=2, 
+    alpha=0.05, 
+    iterations=100
+)
+
+settings = GeneralSettings(
+    algorithm=algorithm,
+    problems=problems,
+    measure=measurement,
+    samples=samples,
+    user='USER_NAME',
+    job='JOB',
+    base_location='./test',
+    jar_path='/home/filipe/src/cilib/simulator/target/cilib-simulator-assembly-0.8-SNAPSHOT.jar'
+)
+
+frace_runner(settings, frace_settings, ifrace_settings)
 

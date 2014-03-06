@@ -13,10 +13,14 @@ def par_to_num(a):
 
 
 def par_to_result(a):
+    '''
+    Converts a parameter configuration string into a result measurement
+    '''
+
     return '[' + a.replace('___', '.').replace('_', ',') + ']'
 
 
-def parameter_name(p):
+def num_to_par(p):
     '''
     Converts a list of numbers into a parameter configuration string
     '''
@@ -24,25 +28,27 @@ def parameter_name(p):
     return '_'.join([str(j) for j in p]).replace('.', '___')
 
 
-def parameter_filename(user, job, iteration, p, base_location):
+def par_filename(iteration, p, location):
     '''
     Creates a file path for a given parameter/iteration combination
     '''
-    return os.path.join(base_location, str(iteration) + '_' + p + '.txt')
+    
+    return os.path.join(location.results_location, str(iteration) + '_' + p + '.txt')
 
 
-def parameter_filenames(user_settings, iteration, pars, location_settings):
+def par_filenames(iteration, pars, location):
     '''
     Creates a list of file paths for the given parameters
     '''
 
-    return [ os.path.join(location_settings.base_location, user_settings.user + '_' + user_settings.job, str(iteration) + '_' + p + '.txt') for p in pars ]
+    return [ par_filename(iteration, p, location) for p in pars ]
 
 
 def sort_pars(results, pars):
     '''
     Sorts the parameters in order of performance according to results
     '''
+
     return [i[1] for i in sorted(zip(list(sum(rankdata(array(results), axis=1))),pars))]
 
 
@@ -51,18 +57,17 @@ def def_name(s):
     Retrieves the scala def name for a given scala def
     '''
 
-    return re.search(r'def(.*)=', s).group(1).strip()
+    return re.search(r'def(.*?)=', s).group(1).strip()
 
 
 def id_name(s):
-    return re.search(r'id="(.*)" class', s).group(1).strip()
+    return re.search(r'id="(.*?)" class', s).group(1).strip()
 
 
 def get_algorithm_string(algorithm_path):
     with open(algorithm_path) as f:
         s = f.read().replace('\n', '')
 
-    print "here"
     return re.findall(r'<algorithm\s.*</algorithm>', s)[0]
 
 def get_problem_strings(problems_path):

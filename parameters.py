@@ -49,7 +49,7 @@ def initial_ffd(par_gens):
     par_gens: list of parameter generators
     '''
 
-    return lambda: [parameter_name(i) for i in product(*[p() for p in par_gens])]
+    return lambda: [num_to_par(i) for i in product(*[p() for p in par_gens])]
 
 
 def initial_sobol(bounds, count):
@@ -60,8 +60,7 @@ def initial_sobol(bounds, count):
     bounds: list of tuples (or lists) containing lower and upper bounds [(l1,u1), ..., (ln,un)]
     count: number of configurations to generate
     '''
-    print bounds, count
-    return lambda: [parameter_name([i[j] * (bounds[j][1] - bounds[j][0]) + bounds[j][0] for j in range(len(bounds))]) 
+    return lambda: [num_to_par([i[j] * (bounds[j][1] - bounds[j][0]) + bounds[j][0] for j in range(len(bounds))]) 
         for i in i4_sobol_generate(len(bounds), int(count), 2).T]
 
 
