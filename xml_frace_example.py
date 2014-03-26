@@ -11,11 +11,13 @@ parameter_bounds = [
 algorithm = """<algorithm id="pso" class="pso.PSO">
     <initialisationStrategy class="algorithm.initialisation.ClonedPopulationInitialisationStrategy">
         <entityType class="pso.particle.StandardParticle">
-            <velocityProvider class="pso.velocityprovider.StandardVelocityProvider">
-                <inertiaWeight class="tuning.TuningControlParameter" index="0"/>
-                <cognitiveAcceleration class="tuning.TuningControlParameter" index="1"/>
-                <socialAcceleration class="tuning.TuningControlParameter" index="2"/>
-            </velocityProvider>
+            <behaviour class="pso.behaviour.StandardParticleBehaviour">
+                <velocityProvider class="pso.velocityprovider.StandardVelocityProvider">
+                    <inertiaWeight class="tuning.TuningControlParameter" index="0"/>
+                    <cognitiveAcceleration class="tuning.TuningControlParameter" index="1"/>
+                    <socialAcceleration class="tuning.TuningControlParameter" index="2"/>
+                </velocityProvider>
+            </behaviour>
         </entityType>
     </initialisationStrategy>
     <addStoppingCondition class="stoppingcondition.MeasuredStoppingCondition" target="100"/>
@@ -66,10 +68,12 @@ settings = GeneralSettings(
     problems=problems,
     measure=measurement,
     samples=samples,
+    resolution=5000,
+    maximising=False,
     user='USER_NAME',
     job='JOB',
     base_location='./test',
-    jar_path='/home/filipe/src/cilib/simulator/target/cilib-simulator-assembly-0.8-SNAPSHOT.jar'
+    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar'
 )
 
 frace_runner(settings, frace_settings, ifrace_settings)

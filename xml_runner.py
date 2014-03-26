@@ -56,7 +56,7 @@ def generate_script(pars, iteration, settings):
             .replace('$4', str(settings.samples))
 
     script.write(header_section + '\n')
-    script.write('<measurements id="m_frace" class="simulator.MeasurementSuite" resolution="5000">\n' + \
+    script.write('<measurements id="m_frace" class="simulator.MeasurementSuite" resolution="%i">\n' % (settings.resolution) + \
                  settings.measurement + '</measurements>\n')
     script.write('<problems>' + problem + '</problems>\n')
     script.write('<algorithms>' + algorithms + '</algorithms>\n')
@@ -74,6 +74,7 @@ def run_script(script, jar_path):
 
     print "~~~ Starting process ~~~"
     process = Popen(['java', '-jar', jar_path, script])
+    #process = Popen(['/home/filipe/src/NewPleiades/upload.py', '-u', 'frace', '-j', jar_path, '-i', script, '-t', 'custom'])
     process.wait()
     if process.returncode:
         print "Error running process: Exiting"

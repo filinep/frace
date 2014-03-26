@@ -35,11 +35,14 @@ class FRaceSettings(object):
 
 
 class GeneralSettings(object):
-    def __init__(self, algorithm, problems, measure, samples, user, job, base_location, jar_path):
+    def __init__(self, algorithm, problems, measure, samples, resolution, maximising, user, job, base_location, jar_path):
         self.algorithm = algorithm
         self.problems = problems
         self.measurement = measure
         self.samples = samples
+        self.resolution = resolution
+
+        self.maximising = maximising
 
         self.user = user
         self.job = job
@@ -110,7 +113,7 @@ def generate_results(settings):
         if not pars:
             pars = [ p[p.find('_')+1:].replace('.txt', '') for p in ps ]
 
-        results.append([file_mean(os.path.join(path, p), 1 if 'min' in p else -1) for p in ps])
+        results.append([file_mean(os.path.join(path, p), 1 if not settings.maximising else -1) for p in ps])
 
     return results, pars
 
@@ -119,11 +122,11 @@ def iteration(pars, settings, frace_settings, iteration):
     run_script(generate_script(pars, iteration, settings), settings.jar_path)
 
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
-	for p in par_filenames(iteration, pars, settings):
-            print p, os.path.exists(p)
-        # wait for results
-        print "sleepy time"
-        time.sleep(5)
+        for p in par_filenames(iteration, pars, settings):
+            #print p, os.path.exists(p)
+            # wait for results
+            print "sleepy time"
+            time.sleep(5)
 
     results, pars = generate_results(settings)
 
