@@ -67,14 +67,13 @@ def generate_script(pars, iteration, settings):
     return script_filename
 
 
-def run_script(script, jar_path):
+def run_script(script, jar_path, cmd):
     '''
     Function to run a given script
     '''
 
     print "~~~ Starting process ~~~"
-    process = Popen(['java', '-jar', jar_path, script])
-    #process = Popen(['/home/filipe/src/NewPleiades/upload.py', '-u', 'frace', '-j', jar_path, '-i', script, '-t', 'custom'])
+    process = Popen((cmd % (jar_path, script)).split(' '))
     process.wait()
     if process.returncode:
         print "Error running process: Exiting"

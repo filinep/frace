@@ -1,5 +1,6 @@
-from frace import *
-from parameters import *
+from frace import frace, parameters
+from frace.frace import *
+from frace.parameters import *
 
 # The order here corresponds to the tuning parameters below
 parameter_bounds = [
@@ -73,7 +74,9 @@ settings = GeneralSettings(
     user='USER_NAME',
     job='JOB',
     base_location='./test',
-    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar'
+    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
+    cmd='java -jar %s %s' #use this to run locally, add extra jvm options if needed
+    #cmd='/home/filipe/src/NewPleiades/upload.py -u frace -j %s -i %s -t custom' #use this to upload to cluster
 )
 
 frace_runner(settings, frace_settings, ifrace_settings)

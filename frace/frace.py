@@ -35,7 +35,7 @@ class FRaceSettings(object):
 
 
 class GeneralSettings(object):
-    def __init__(self, algorithm, problems, measure, samples, resolution, maximising, user, job, base_location, jar_path):
+    def __init__(self, algorithm, problems, measure, samples, resolution, maximising, user, job, base_location, jar_path, cmd):
         self.algorithm = algorithm
         self.problems = problems
         self.measurement = measure
@@ -54,6 +54,8 @@ class GeneralSettings(object):
 
         self.base_location = base_location
         self.results_location = os.path.join(base_location, user + '_' + job)
+
+        self.cmd = cmd
 
 
 # Statistical functions
@@ -119,7 +121,7 @@ def generate_results(settings):
 
 
 def iteration(pars, settings, frace_settings, iteration):
-    run_script(generate_script(pars, iteration, settings), settings.jar_path)
+    run_script(generate_script(pars, iteration, settings), settings.jar_path, settings.cmd)
 
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
         for p in par_filenames(iteration, pars, settings):
