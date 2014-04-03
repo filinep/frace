@@ -125,10 +125,10 @@ def iteration(pars, settings, frace_settings, iteration):
 
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
         for p in par_filenames(iteration, pars, settings):
-            #print p, os.path.exists(p)
+            print p, os.path.exists(p)
             # wait for results
-            print "sleepy time"
-            time.sleep(5)
+        print "sleepy time"
+        time.sleep(5)
 
     results, pars = generate_results(settings)
 
