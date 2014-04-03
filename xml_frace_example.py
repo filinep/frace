@@ -61,9 +61,10 @@ frace_settings = FRaceSettings(
     min_probs=5, 
     min_solutions=2, 
     alpha=0.05, 
-    iterations=100
+    iterations=50
 )
 
+#use this to run locally
 settings = GeneralSettings(
     algorithm=algorithm,
     problems=problems,
@@ -75,9 +76,23 @@ settings = GeneralSettings(
     job='JOB',
     base_location='./test',
     jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
-    cmd='java -jar %s %s' #use this to run locally, add extra jvm options if needed
-    #cmd='/home/filipe/src/NewPleiades/upload.py -u frace -j %s -i %s -t custom' #use this to upload to cluster
+    cmd='java -jar %s %s' # add extra jvm options if needed
 )
+
+#use this to upload to cluster
+# settings = GeneralSettings(
+#     algorithm=algorithm,
+#     problems=problems,
+#     measure=measurement,
+#     samples=samples,
+#     resolution=5000,
+#     maximising=False,
+#     user='USER_NAME',
+#     job='JOB',
+#     base_location='/SAN/pleiades/results/USER_NAME',
+#     jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
+#     cmd='/home/filipe/src/NewPleiades/upload.py -u USER_NAME -j %s -i %s -t custom'
+# )
 
 frace_runner(settings, frace_settings, ifrace_settings)
 

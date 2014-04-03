@@ -121,8 +121,6 @@ def generate_results(settings):
 
 
 def iteration(pars, settings, frace_settings, iteration):
-    run_script(generate_script(pars, iteration, settings), settings.jar_path, settings.cmd)
-
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
         for p in par_filenames(iteration, pars, settings):
             print p, os.path.exists(p)
@@ -180,7 +178,7 @@ def frace_runner(settings, frace_settings, ifrace_settings):
     results_file.write('0 ' + ' '.join([par_to_result(p) for p in pars]) + '\n')
 
     i = 0
-    while i <= frace_settings.iterations:
+    while i < frace_settings.iterations:
 
         print '\nStarting iteration', i
 
@@ -192,8 +190,23 @@ def frace_runner(settings, frace_settings, ifrace_settings):
             shutil.rmtree(os.path.join(settings.results_location))
             os.makedirs(os.path.join(settings.results_location))
 
+        if not ifrace_settings.is_iterative:
+            e_iter = frace_settings.iterations
+            m_iter = frace_settings.min_probs
+            s_iter = 0
+        else:
+            s_iter = i / ifrace_settings.interval * ifrace_settings.interval
+            m_iter = s_iter + frace_settings.min_probs
+            e_iter = s_iter + ifrace_settings.interval
+
         # get list of current result files
         toRemove = copy.deepcopy(pars)
+
+        if i == s_iter:
+            run_script(generate_script_multiple(pars, range(s_iter, min(frace_settings.iterations, m_iter)), settings), settings.jar_path, settings.cmd)
+            i = min(m_iter - 1, frace_settings.iterations)
+        elif i >= m_iter:
+            run_script(generate_script_multiple(pars, [i], settings), settings.jar_path, settings.cmd)
 
         # frace iteration
         print '-- Iteration'
