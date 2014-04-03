@@ -126,8 +126,9 @@ def iteration(pars, settings, frace_settings, iteration):
         #     print p, os.path.exists(p)
         #     # wait for results
         # print "sleepy time"
-        print '\r', sum([os.path.exists(p) for p in par_filenames(iteration, pars, settings)]), '/', float(len(pars)), 'Completed results'
+        print '\r', sum([os.path.exists(p) for p in par_filenames(iteration, pars, settings)]), '/', float(len(pars)), 'Completed results',
         time.sleep(5)
+    print
 
     results, pars = generate_results(settings)
 
