@@ -122,10 +122,11 @@ def generate_results(settings):
 
 def iteration(pars, settings, frace_settings, iteration):
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
-        for p in par_filenames(iteration, pars, settings):
-            print p, os.path.exists(p)
-            # wait for results
-        print "sleepy time"
+        # for p in par_filenames(iteration, pars, settings):
+        #     print p, os.path.exists(p)
+        #     # wait for results
+        # print "sleepy time"
+        print '\r', sum([os.path.exists(p) for p in par_filenames(iteration, pars, settings)]), '/', float(len(pars)), 'Completed results'
         time.sleep(5)
 
     results, pars = generate_results(settings)
@@ -190,6 +191,10 @@ def frace_runner(settings, frace_settings, ifrace_settings):
             shutil.rmtree(os.path.join(settings.results_location))
             os.makedirs(os.path.join(settings.results_location))
 
+        # get list of current result files
+        toRemove = copy.deepcopy(pars)
+
+        # determine start, middle and end iterations of current cycle
         if not ifrace_settings.is_iterative:
             e_iter = frace_settings.iterations
             m_iter = frace_settings.min_probs
@@ -199,14 +204,12 @@ def frace_runner(settings, frace_settings, ifrace_settings):
             m_iter = s_iter + frace_settings.min_probs
             e_iter = s_iter + ifrace_settings.interval
 
-        # get list of current result files
-        toRemove = copy.deepcopy(pars)
-
+        # if at beginning of a cylce generate all sims from now until discarding iteration
         if i == s_iter:
-            run_script(generate_script_multiple(pars, range(s_iter, min(frace_settings.iterations, m_iter)), settings), settings.jar_path, settings.cmd)
+            run_script(generate_script(pars, range(s_iter, min(frace_settings.iterations, m_iter)), settings), settings.jar_path, settings.cmd)
             i = min(m_iter - 1, frace_settings.iterations)
-        elif i >= m_iter:
-            run_script(generate_script_multiple(pars, [i], settings), settings.jar_path, settings.cmd)
+        elif i >= m_iter: # if discarding iteration 
+            run_script(generate_script(pars, [i], settings), settings.jar_path, settings.cmd)
 
         # frace iteration
         print '-- Iteration'
