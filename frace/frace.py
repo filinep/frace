@@ -207,7 +207,9 @@ def frace_runner(settings, frace_settings, ifrace_settings):
 
         # if at beginning of a cylce generate all sims from now until discarding iteration
         if i == s_iter:
-            run_script(generate_script(pars, range(s_iter, min(frace_settings.iterations, m_iter)), settings), settings.jar_path, settings.cmd)
+            for j in range(s_iter, min(frace_settings.iterations, m_iter)):
+                run_script(generate_script(pars, [j], settings), settings.jar_path, settings.cmd)
+                time.sleep(1)
             i = min(m_iter - 1, frace_settings.iterations)
         elif i >= m_iter: # if discarding iteration 
             run_script(generate_script(pars, [i], settings), settings.jar_path, settings.cmd)
