@@ -6,7 +6,8 @@ from frace.parameters import *
 parameter_bounds = [
 (0.01,0.99),
 (0.0,4.0),
-(0.0,4.0)
+(0.0,4.0),
+(10,50)
 ]
 
 algorithm = """<algorithm id="pso" class="pso.PSO">
@@ -20,6 +21,7 @@ algorithm = """<algorithm id="pso" class="pso.PSO">
                 </velocityProvider>
             </behaviour>
         </entityType>
+        <entityNumber value="$int_index=3$"/>
     </initialisationStrategy>
     <addStoppingCondition class="stoppingcondition.MeasuredStoppingCondition" target="100"/>
 </algorithm>"""

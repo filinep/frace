@@ -44,6 +44,10 @@ def generate_script(pars, iterations, settings):
             algorithm = algorithm.replace(
                 'tuning.TuningControlParameter" index="%d"' % i, 
                 'controlparameter.ConstantControlParameter" parameter="%f"' % config[i]
+            ).replace(
+                '$int_index=%d$' % i, str(int(config[i]))
+            ).replace(
+                '$double_index=%d$' % i, str(config[i])
             )
 
         algorithms += algorithm.replace(id_name(settings.algorithm), 'alg_' + p, 1) + '\n'
