@@ -127,6 +127,7 @@ def iteration(pars, settings, frace_settings, iteration):
         #     print p, os.path.exists(p)
         #     # wait for results
         sys.stdout.write('.')
+        sys.stdout.flush()
         time.sleep(10)
     print
 
@@ -238,6 +239,7 @@ def frace_runner(settings, frace_settings, ifrace_settings):
 
         # write pars to result file
         results_file.write(str(i) + ' ' + ' '.join([par_to_result(p) for p in pars]) + '\n')
+        results_file.flush()
 
         # this is so we don't waste time tuning when there is no chance of reducing the no. of parameters
         if ifrace_settings.is_iterative and len(pars) == frace_settings.min_solutions:
