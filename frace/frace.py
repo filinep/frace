@@ -126,8 +126,8 @@ def iteration(pars, settings, frace_settings, iteration):
         # for p in par_filenames(iteration, pars, settings):
         #     print p, os.path.exists(p)
         #     # wait for results
-        print '.',
-        time.sleep(30)
+        sys.stdout.write('.')
+        time.sleep(10)
     print
 
     results, pars = generate_results(settings, iteration)
