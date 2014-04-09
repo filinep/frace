@@ -91,7 +91,7 @@ def post_hoc(results, alpha, stat):
     return [rank_sum.index(i) for i in rank_sum if abs(best - i) < rhs]
 
 
-def generate_results(settings):
+def generate_results(settings, iteration):
     '''
     Function to generate a results table and a list of parameters given from a directory
     It is assumed that there are an equal number results for each parameter
@@ -106,7 +106,7 @@ def generate_results(settings):
     results = []
     pars = []
     path = settings.results_location
-    files = sorted(os.listdir(path), key=by_iter)
+    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration], key=by_iter)
 
     groups = groupby(files, by_iter)
     for k in groups:
@@ -121,16 +121,21 @@ def generate_results(settings):
 
 
 def iteration(pars, settings, frace_settings, iteration):
+    print 'Waiting for results...'
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
         # for p in par_filenames(iteration, pars, settings):
         #     print p, os.path.exists(p)
         #     # wait for results
-        # print "sleepy time"
-        print '\r', sum([os.path.exists(p) for p in par_filenames(iteration, pars, settings)]), '/', float(len(pars)), 'Completed results',
-        time.sleep(5)
+        print '.',
+        time.sleep(30)
     print
 
-    results, pars = generate_results(settings)
+    results, pars = generate_results(settings, iteration)
+    print '\n^^^^^^^^^^^^^^^^^^^^^^^'
+    print pars
+    print results
+    print rankdata(array(results), axis=1)
+    print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'
@@ -210,7 +215,6 @@ def frace_runner(settings, frace_settings, ifrace_settings):
             for j in range(s_iter, min(frace_settings.iterations, m_iter)):
                 run_script(generate_script(pars, [j], settings), settings.jar_path, settings.cmd)
                 time.sleep(1)
-            i = min(m_iter - 1, frace_settings.iterations)
         elif i >= m_iter: # if discarding iteration 
             run_script(generate_script(pars, [i], settings), settings.jar_path, settings.cmd)
 
@@ -228,7 +232,7 @@ def frace_runner(settings, frace_settings, ifrace_settings):
 
         # sort parameters
         print '-- Sorting parameters'
-        pars = sort_pars(*generate_results(settings))
+        pars = sort_pars(*generate_results(settings, i))
 
         i += 1
 
