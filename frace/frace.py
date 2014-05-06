@@ -106,7 +106,7 @@ def generate_results(settings, iteration):
     results = []
     pars = []
     path = settings.results_location
-    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration], key=by_iter)
+    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration and os.path.isfile(os.path.join(path, i))], key=by_iter)
 
     groups = groupby(files, by_iter)
     for k in groups:
@@ -132,11 +132,11 @@ def iteration(pars, settings, frace_settings, iteration):
     print
 
     results, pars = generate_results(settings, iteration)
-    print '\n^^^^^^^^^^^^^^^^^^^^^^^'
-    print pars
-    print results
-    print rankdata(array(results), axis=1)
-    print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
+    #print '\n^^^^^^^^^^^^^^^^^^^^^^^'
+    #print pars
+    #print results
+    #print rankdata(array(results), axis=1)
+    #print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'

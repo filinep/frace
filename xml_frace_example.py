@@ -55,18 +55,33 @@ samples = 5
 ifrace_settings = IFraceSettings(
     is_iterative=True, 
     interval=10, 
-    regenerator=regen_minmax_sobol(64)
+    regenerator=regen_minmax_sobol(32)
 )
 
 frace_settings = FRaceSettings(
-    generator=initial_sobol(parameter_bounds, 64), 
+    generator=initial_sobol(parameter_bounds, 32), 
     min_probs=5, 
     min_solutions=2, 
     alpha=0.05, 
-    iterations=50
+    iterations=20
 )
 
 #use this to run locally
+#settings = GeneralSettings(
+#    algorithm=algorithm,
+#    problems=problems,
+#    measure=measurement,
+#    samples=samples,
+#    resolution=5000,
+#    maximising=False,
+#    user='USER_NAME',
+#    job='JOB',
+#    base_location='./test',
+#    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
+#    cmd='java -jar %s %s' # add extra jvm options if needed
+#)
+
+#use this to upload to cluster
 settings = GeneralSettings(
     algorithm=algorithm,
     problems=problems,
@@ -74,27 +89,12 @@ settings = GeneralSettings(
     samples=samples,
     resolution=5000,
     maximising=False,
-    user='USER_NAME',
-    job='JOB',
-    base_location='./test',
+    user='filinep',
+    job='gbest_test',
+    base_location='/SAN/pleiades/results/filinep',
     jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
-    cmd='java -jar %s %s' # add extra jvm options if needed
+    cmd='/home/pleiades/NewPleiades/upload.py -u filinep -j %s -i %s -t custom'
 )
-
-#use this to upload to cluster
-# settings = GeneralSettings(
-#     algorithm=algorithm,
-#     problems=problems,
-#     measure=measurement,
-#     samples=samples,
-#     resolution=5000,
-#     maximising=False,
-#     user='USER_NAME',
-#     job='JOB',
-#     base_location='/SAN/pleiades/results/USER_NAME',
-#     jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
-#     cmd='/home/filipe/src/NewPleiades/upload.py -u USER_NAME -j %s -i %s -t custom'
-# )
 
 frace_runner(settings, frace_settings, ifrace_settings)
 
