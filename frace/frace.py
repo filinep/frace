@@ -120,7 +120,7 @@ def generate_results(settings, frace_settings, iteration):
         return int(os.path.basename(x).split('_')[0])
 
     path = settings.results_location
-    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration], key=by_iter)
+    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration and os.path.isfile(os.path.join(path, i))], key=by_iter)
     groups = [(i[0], [j for j in i[1]]) for i in groupby(files, by_iter)]
 
     pars = [ p[p.find('_')+1:].replace('.txt', '') for p in groups[0][1] ]
@@ -150,14 +150,7 @@ def generate_results_single(obj, groups, path):
     def file_mean(x):
         return obj * scipy.mean([float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]])
 
-<<<<<<< HEAD
-    results = []
-    pars = []
-    path = settings.results_location
-    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration and os.path.isfile(os.path.join(path, i))], key=by_iter)
-=======
     return [ [file_mean(os.path.join(path, p)) for p in sorted([v for v in k[1]])] for k in groups ]
->>>>>>> Added code to tune on multiple measurements
 
 
 def generate_results_multiple(obj, groups, path, ms, alpha):
@@ -203,21 +196,12 @@ def iteration(pars, settings, frace_settings, iteration):
         time.sleep(10)
     print
 
-<<<<<<< HEAD
-    results, pars = generate_results(settings, iteration)
-    #print '\n^^^^^^^^^^^^^^^^^^^^^^^'
-    #print pars
-    #print results
-    #print rankdata(array(results), axis=1)
-    #print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
-=======
     results, pars = generate_results(settings, frace_settings, iteration)
     print '\n^^^^^^^^^^^^^^^^^^^^^^^'
     print pars
     print results
     print rankdata(array(results), axis=1)
     print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
->>>>>>> Added code to tune on multiple measurements
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'
