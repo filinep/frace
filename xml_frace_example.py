@@ -48,9 +48,12 @@ problems = [
 </problem>'''
 ]
 
-measurement = '<addMeasurement class="measurement.single.Fitness"/>'
+measurement = '''
+<addMeasurement class="measurement.single.Fitness"/>
+<addMeasurement class="measurement.single.diversity.Diversity"/>
+'''
 
-samples = 5
+samples = 30
 
 ifrace_settings = IFraceSettings(
     is_iterative=True, 
@@ -88,7 +91,7 @@ settings = GeneralSettings(
     measure=measurement,
     samples=samples,
     resolution=5000,
-    maximising=False,
+    maximising=[False,False],
     user='filinep',
     job='gbest_test',
     base_location='/SAN/pleiades/results/filinep',

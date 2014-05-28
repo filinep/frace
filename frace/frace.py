@@ -5,13 +5,17 @@ import copy
 import glob
 import sys
 
-from  itertools import product, groupby
+from  itertools import product, groupby, combinations
 
 from numpy import array
 
 import scipy
 from scipy.stats import chi2, t
 from scipy.stats.mstats import rankdata
+from scipy.stats import tiecorrect
+from scipy.stats import distributions
+from scipy.stats import rankdata as rank
+import numpy as np
 
 from xml_runner import *
 from utils import *
@@ -91,33 +95,101 @@ def post_hoc(results, alpha, stat):
     return [rank_sum.index(i) for i in rank_sum if abs(best - i) < rhs]
 
 
-def generate_results(settings, iteration):
+def mann_whitney_u(x, y):
+    x = np.asarray(x)
+    y = np.asarray(y)
+    n1 = len(x)
+    n2 = len(y)
+    ranked = rank(np.concatenate((x,y)))
+    rankx = ranked[0:n1]       # get the x-ranks
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
+    u2 = n1*n2 - u1                            # remainder is U for y
+    T = tiecorrect(ranked)
+    if T == 0:
+        #raise ValueError('All numbers are identical in amannwhitneyu')
+        z = 0
+    else:
+        sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+        z = (min(u1,u2)-n1*n2/2.0) / sd  # normal approximation for prob calc
+
+    return u1, u2, z, distributions.norm.sf(abs(z))  # (1.0 - zprob(z))
+
+
+def generate_results(settings, frace_settings, iteration):
+    def by_iter(x):
+        return int(os.path.basename(x).split('_')[0])
+
+    path = settings.results_location
+    files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration], key=by_iter)
+    groups = [(i[0], [j for j in i[1]]) for i in groupby(files, by_iter)]
+
+    pars = [ p[p.find('_')+1:].replace('.txt', '') for p in groups[0][1] ]
+    with open(os.path.join(path, files[0]), 'r') as tmp:
+        header = [i for i in tmp.readlines() if i[0] == '#']
+        ms = int(header[-1].split(' ')[-1].translate(None, '()')) + 1
+        single = len(set([i.split(' ')[3] for i in header[1:]])) == 1
+
+    if single:
+        return generate_results_single(
+            1 if not settings.maximising else -1,
+            groups, path
+        ), pars
+    else:
+        return generate_results_multiple(
+            [ 1 if not o else -1 for o in settings.maximising],
+            groups, path, ms, frace_settings.alpha
+        ), pars
+
+
+def generate_results_single(obj, groups, path):
     '''
     Function to generate a results table and a list of parameters given from a directory
     It is assumed that there are an equal number results for each parameter
     '''
 
-    def by_iter(x):
-        return int(os.path.basename(x).split('_')[0])
-
-    def file_mean(x, obj=1):
+    def file_mean(x):
         return obj * scipy.mean([float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]])
 
+<<<<<<< HEAD
     results = []
     pars = []
     path = settings.results_location
     files = sorted([i for i in os.listdir(path) if by_iter(i) <= iteration and os.path.isfile(os.path.join(path, i))], key=by_iter)
+=======
+    return [ [file_mean(os.path.join(path, p)) for p in sorted([v for v in k[1]])] for k in groups ]
+>>>>>>> Added code to tune on multiple measurements
 
-    groups = groupby(files, by_iter)
+
+def generate_results_multiple(obj, groups, path, ms, alpha):
+    def chunks(l, n):
+        for i in xrange(0, len(l), n):
+            yield l[i:i+n]
+
+    def measurements(x):
+        rs = [float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]]
+        return [[o * i for i in r] for o, r in zip(obj, list(chunks(rs, ms)))]
+
+    results = []
     for k in groups:
         ps = sorted([v for v in k[1]])
+        wins = [0 for _ in ps]
 
-        if not pars:
-            pars = [ p[p.find('_')+1:].replace('.txt', '') for p in ps ]
+        for pair in combinations(ps, 2):
+            a1 = pair[0]
+            a2 = pair[1]
+            m1 = measurements(os.path.join(path, a1))
+            m2 = measurements(os.path.join(path, a2))
+            for i,j in zip(m1, m2):
+                stat = mann_whitney_u(i, j)
+                if stat[-1] < alpha:
+                    if stat[0] > stat[1]:
+                        wins[ps.index(a1)] -= 1 # negative because we are maximising the wins
+                    else:
+                        wins[ps.index(a2)] -= 1
 
-        results.append([file_mean(os.path.join(path, p), 1 if not settings.maximising else -1) for p in ps])
+        results.append(wins)
 
-    return results, pars
+    return results
 
 
 def iteration(pars, settings, frace_settings, iteration):
@@ -131,12 +203,21 @@ def iteration(pars, settings, frace_settings, iteration):
         time.sleep(10)
     print
 
+<<<<<<< HEAD
     results, pars = generate_results(settings, iteration)
     #print '\n^^^^^^^^^^^^^^^^^^^^^^^'
     #print pars
     #print results
     #print rankdata(array(results), axis=1)
     #print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
+=======
+    results, pars = generate_results(settings, frace_settings, iteration)
+    print '\n^^^^^^^^^^^^^^^^^^^^^^^'
+    print pars
+    print results
+    print rankdata(array(results), axis=1)
+    print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
+>>>>>>> Added code to tune on multiple measurements
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'
@@ -233,7 +314,7 @@ def frace_runner(settings, frace_settings, ifrace_settings):
 
         # sort parameters
         print '-- Sorting parameters'
-        pars = sort_pars(*generate_results(settings, i))
+        pars = sort_pars(*generate_results(settings, frace_settings, i))
 
         i += 1
 
