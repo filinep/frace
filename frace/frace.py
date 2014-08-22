@@ -148,7 +148,7 @@ def generate_results_single(obj, groups, path):
     '''
 
     def file_mean(x):
-        return obj * scipy.mean([float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]])
+        return obj * scipy.mean([float('inf') if float(i) is float('nan') else float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]])
 
     return [ [file_mean(os.path.join(path, p)) for p in sorted([v for v in k[1]])] for k in groups ]
 
@@ -159,7 +159,7 @@ def generate_results_multiple(obj, groups, path, ms, alpha):
             yield l[i:i+n]
 
     def measurements(x):
-        rs = [float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]]
+        rs = [float('inf') if float(i) is float('nan') else float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]]
         return [[o * i for i in r] for o, r in zip(obj, list(chunks(rs, ms)))]
 
     results = []
@@ -187,21 +187,19 @@ def generate_results_multiple(obj, groups, path, ms, alpha):
 
 def iteration(pars, settings, frace_settings, iteration):
     print 'Waiting for results...'
+
     while not all(os.path.exists(p) for p in par_filenames(iteration, pars, settings)):
-        # for p in par_filenames(iteration, pars, settings):
-        #     print p, os.path.exists(p)
-        #     # wait for results
-        sys.stdout.write('.')
-        sys.stdout.flush()
+        not_done = [p for p in par_filenames(iteration, pars, settings) if not os.path.exists(p)]
+        if not_done:
+            print 'Waiting for\n\t', '\n\t'.join(not_done)
         time.sleep(10)
-    print
 
     results, pars = generate_results(settings, frace_settings, iteration)
-    print '\n^^^^^^^^^^^^^^^^^^^^^^^'
-    print pars
-    print results
-    print rankdata(array(results), axis=1)
-    print 'vvvvvvvvvvvvvvvvvvvvvvv\n'
+
+    while not all([len(i) == len(pars) for i in results]):
+        results, pars = generate_results(settings, frace_settings, iteration)
+        print 'Results not ready...'
+        time.sleep(10)
 
     if len(results) >= frace_settings.min_probs and len(pars) > 1:
         print 'Consulting Milton'
@@ -230,7 +228,7 @@ def iteration(pars, settings, frace_settings, iteration):
     return pars
 
 
-def frace_runner(settings, frace_settings, ifrace_settings):
+def frace_runner(settings, frace_settings, ifrace_settings, skip=None):
 
     path = os.path.join(settings.base_location, settings.user)
     if os.path.exists(path):
@@ -276,13 +274,16 @@ def frace_runner(settings, frace_settings, ifrace_settings):
             m_iter = s_iter + frace_settings.min_probs
             e_iter = s_iter + ifrace_settings.interval
 
+        def run(i):
+            return not skip is None and not i in skip
+
         # if at beginning of a cylce generate all sims from now until discarding iteration
         if i == s_iter:
             for j in range(s_iter, min(frace_settings.iterations, m_iter)):
-                run_script(generate_script(pars, [j], settings), settings.jar_path, settings.cmd)
+                run_script(generate_script(pars, [j], settings), settings.jar_path, settings.cmd, run(j))
                 time.sleep(1)
         elif i >= m_iter: # if discarding iteration 
-            run_script(generate_script(pars, [i], settings), settings.jar_path, settings.cmd)
+            run_script(generate_script(pars, [i], settings), settings.jar_path, settings.cmd, run(i))
 
         # frace iteration
         print '-- Iteration'

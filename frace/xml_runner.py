@@ -76,11 +76,11 @@ def generate_script(pars, iterations, settings):
     return script_filename
 
 
-def run_script(script, jar_path, cmd):
+def run_script(script, jar_path, cmd, run=True):
     '''
     Function to run a given script
     '''
-
+    if not run: return
     print "~~~ Starting process ~~~"
     process = Popen((cmd % (jar_path, script)).split(' '))
     process.wait()
