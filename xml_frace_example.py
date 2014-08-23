@@ -53,7 +53,7 @@ measurement = '''
 <addMeasurement class="measurement.single.diversity.Diversity"/>
 '''
 
-samples = 30
+samples = 1
 
 ifrace_settings = IFraceSettings(
     is_iterative=True, 
@@ -66,25 +66,10 @@ frace_settings = FRaceSettings(
     min_probs=5, 
     min_solutions=2, 
     alpha=0.05, 
-    iterations=20
+    iterations=30
 )
 
 #use this to run locally
-#settings = GeneralSettings(
-#    algorithm=algorithm,
-#    problems=problems,
-#    measure=measurement,
-#    samples=samples,
-#    resolution=5000,
-#    maximising=False,
-#    user='USER_NAME',
-#    job='JOB',
-#    base_location='./test',
-#    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
-#    cmd='java -jar %s %s' # add extra jvm options if needed
-#)
-
-#use this to upload to cluster
 settings = GeneralSettings(
     algorithm=algorithm,
     problems=problems,
@@ -92,12 +77,27 @@ settings = GeneralSettings(
     samples=samples,
     resolution=5000,
     maximising=[False,False],
-    user='filinep',
-    job='gbest_test',
-    base_location='/SAN/pleiades/results/filinep',
+    user='USER_NAME',
+    job='JOB',
+    base_location='./test',
     jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
-    cmd='/home/pleiades/NewPleiades/upload.py -u filinep -j %s -i %s -t custom'
+    cmd='java -jar %s %s' # add extra jvm options if needed
 )
+
+#use this to upload to cluster
+#settings = GeneralSettings(
+#    algorithm=algorithm,
+#    problems=problems,
+#    measure=measurement,
+#    samples=samples,
+#    resolution=5000,
+#    maximising=[False,False],
+#    user='filinep',
+#    job='gbest_test',
+#    base_location='/SAN/pleiades/results/filinep',
+#    jar_path='./cilib-simulator-assembly-0.9-SNAPSHOT.jar',
+#    cmd='/home/pleiades/NewPleiades/upload.py -u filinep -j %s -i %s -t custom'
+#)
 
 frace_runner(settings, frace_settings, ifrace_settings)
 

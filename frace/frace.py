@@ -160,27 +160,13 @@ def generate_results_multiple(obj, groups, path, ms, alpha):
 
     def measurements(x):
         rs = [float('inf') if float(i) is float('nan') else float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]]
-        return [[o * i for i in r] for o, r in zip(obj, list(chunks(rs, ms)))]
+        return [o * i for o, r in zip(obj, list(chunks(rs, ms))) for i in r]
 
     results = []
     for k in groups:
         ps = sorted([v for v in k[1]])
-        wins = [0 for _ in ps]
-
-        for pair in combinations(ps, 2):
-            a1 = pair[0]
-            a2 = pair[1]
-            m1 = measurements(os.path.join(path, a1))
-            m2 = measurements(os.path.join(path, a2))
-            for i,j in zip(m1, m2):
-                stat = mann_whitney_u(i, j)
-                if stat[-1] < alpha:
-                    if stat[0] > stat[1]:
-                        wins[ps.index(a1)] -= 1 # negative because we are maximising the wins
-                    else:
-                        wins[ps.index(a2)] -= 1
-
-        results.append(wins)
+        one = zip(*[measurements(os.path.join(path, p)) for p in ps])
+        results.extend(one)
 
     return results
 
@@ -201,7 +187,7 @@ def iteration(pars, settings, frace_settings, iteration):
         print 'Results not ready...'
         time.sleep(10)
 
-    if len(results) >= frace_settings.min_probs and len(pars) > 1:
+    if len(results) >= frace_settings.min_probs * (len(settings.maximising) if type(settings.maximising) is list else 1) and len(pars) > 1:
         print 'Consulting Milton'
         f_stat, p_val = friedman(results, frace_settings.alpha)
 
@@ -275,7 +261,7 @@ def frace_runner(settings, frace_settings, ifrace_settings, skip=None):
             e_iter = s_iter + ifrace_settings.interval
 
         def run(i):
-            return not skip is None and not i in skip
+            return skip is None or (not skip is None and not i in skip)
 
         # if at beginning of a cylce generate all sims from now until discarding iteration
         if i == s_iter:

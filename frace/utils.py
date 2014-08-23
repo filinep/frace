@@ -61,7 +61,10 @@ def def_name(s):
 
 
 def id_name(s):
-    return re.search(r'id="(.*?)" class', s).group(1).strip()
+    try:
+        return re.search(r'class=".*?" id="(.*?)"', s).group(1).strip()
+    except:
+        return re.search(r'id="(.*?)" class', s).group(1).strip()
 
 
 def get_algorithm_string(algorithm_path):
