@@ -160,7 +160,7 @@ def generate_results_multiple(obj, groups, path, ms, alpha):
 
     def measurements(x):
         rs = [float('inf') if float(i) is float('nan') else float(i) for i in open(x, 'r').readlines()[-1].split(' ')[1:]]
-        return [o * i for o, r in zip(obj, list(chunks(rs, ms))) for i in r]
+        return [o * i for o, r in zip(obj, [scipy.mean(j) for j in list(chunks(rs, ms))])]
 
     results = []
     for k in groups:
